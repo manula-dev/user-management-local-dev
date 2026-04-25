@@ -1,4 +1,4 @@
-const API = "";
+const API = "user-management-backend-production-418e.up.railway.app";
 
 // protect dashboard
 if (window.location.pathname.includes("dashboard.html")) {
