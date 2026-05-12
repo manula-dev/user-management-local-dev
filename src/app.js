@@ -9,6 +9,7 @@ import { prisma } from "./db/prisma.js";
 
 const app = express();
 const uploadPath = path.join(process.cwd(), "src", "uploads");
+const frontendPath = path.join(process.cwd(), "Frontend");
 const corsOrigins = env.CORS_ORIGIN
   ? env.CORS_ORIGIN.split(",").map((origin) => origin.trim()).filter(Boolean)
   : undefined;
@@ -19,6 +20,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/uploads", express.static(uploadPath));
+app.use(express.static(frontendPath));
 
 app.get("/", (req, res) => {
   res.status(200).json({ message: "User management backend is running" });

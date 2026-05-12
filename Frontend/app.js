@@ -1,4 +1,39 @@
-const API = "https://user-management-backend-production-418e.up.railway.app";
+const API = getApiBase();
+
+function getApiBase() {
+  const { protocol, hostname, port, origin } = window.location;
+  const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
+
+  if (protocol === "file:" || (isLocalHost && port !== "4001")) {
+    return "http://localhost:4001";
+  }
+
+  return origin;
+}
+
+async function parseJsonResponse(res) {
+  const text = await res.text();
+
+  if (!text) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { error: text };
+  }
+}
+
+// all functions here...
+
+window.login = login;
+window.register = register;
+window.logout = logout;
+window.loadProfile = loadProfile;
+window.updateProfile = updateProfile;
+window.toggleDark = toggleDark;
+
 
 // protect dashboard
 if (window.location.pathname.includes("dashboard.html")) {
@@ -33,7 +68,7 @@ async function register() {
       })
     });
 
-    const data = await res.json();
+    const data = await parseJsonResponse(res);
     if (res.ok) {
     alert("Registration successful!");
     } else {
@@ -78,7 +113,7 @@ async function login() {
       })
     });
 
-    const data = await res.json();
+    const data = await parseJsonResponse(res);
 
     if (spinner) spinner.classList.remove("active");
     if (btn) btn.disabled = false;
@@ -131,7 +166,7 @@ async function loadProfile() {
       }
     });     
 
-    const data = await res.json();
+    const data = await parseJsonResponse(res);
     const user = data.user; // import
     console.log(data);
 
@@ -197,7 +232,7 @@ async function updateProfile() {
     body: formData
   });
 
-  const data = await res.json();
+  const data = await parseJsonResponse(res);
 
   if (!res.ok) {
     alert(data.error || "Update failed");
