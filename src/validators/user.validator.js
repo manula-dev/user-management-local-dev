@@ -1,13 +1,11 @@
-import Joi from "joi";
+import { z } from "zod";
 
-export const createUserSchema = Joi.object({
-  name: Joi.string().trim().min(3).max(50).required(),
-  email: Joi.string().trim().email().required(),
-  password: Joi.string().min(6).required(),
+export const createUserSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
-export const updateUserSchema = Joi.object({
-  name: Joi.string().trim().min(3).max(50),
-  email: Joi.string().trim().email(),
-  password: Joi.string().min(6),
-}).min(1);
+// සියලුම Fields optional කරන්න (.partial() පාවිච්චි කරලා)
+export const updateUserSchema = createUserSchema.partial();
+  

@@ -1,134 +1,70 @@
 import { userService } from "../services/user.service.js";
 import { createUserSchema, updateUserSchema } from "../validators/user.validator.js";
+import { catchAsync } from "../utils/catchAsync.js"; // අපේ ස්ටන්ට් රයිඩර් 🚀
 
-export async function getUsers(req, res) {
-  try {
-    const users = await userService.getUsers();
-    return res.status(200).json(users);
-  } catch {
-    return res.status(500).json({ error: "Internal Server Error" });
-  }
-}
+// 1. සියලුම පරිශීලකයන් ලබා ගැනීම
+export const getUsers = catchAsync(async (req, res) => {
+  const users = await userService.getUsers();
+  return res.status(200).json(users);
+});
 
-export async function getUserById(req, res) {
-  try {
-    const user = await userService.getUserById(req.params.id);
+// 2. ID එකෙන් පරිශීලකයෙක් සෙවීම
+export const getUserById = catchAsync(async (req, res) => {
+  const user = await userService.getUserById(req.params.id);
+  if (!user) return res.status(404).json({ error: "User not found" });
+  
+  return res.status(200).json(user);
+});
 
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    return res.status(200).json(user);
-  } catch (error) {
-    if (error.message === "Invalid user id") {
-      return res.status(400).json({ error: "Valid user ID is required" });
-    }
-
-    return res.status(500).json({ error: "Internal Server Error" });
-  }
-}
-
-export async function createUser(req, res) {
-  const { error, value } = createUserSchema.validate(req.body, {
-    abortEarly: true,
-    stripUnknown: true,
-  });
-
-  if (error) {
-    return res.status(400).json({ error: error.details[0].message });
+// 3. අලුත් පරිශීලකයෙක් සෑදීම (Zod වලට හැරෙව්වා)
+export const createUser = catchAsync(async (req, res) => {
+  const result = createUserSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(400).json({ error: result.error.issues[0].message });
   }
 
-  try {
-    const newUser = await userService.createUser(value);
-    return res.status(201).json(newUser);
-  } catch (serviceError) {
-    if (serviceError?.code === "P2002") {
-      return res.status(409).json({ error: "Email already exists" });
-    }
+  const newUser = await userService.createUser(result.data);
+  return res.status(201).json(newUser);
+});
 
-    return res.status(500).json({ error: "Internal Server Error" });
-  }
-}
-
-export async function updateUser(req, res) {
-  const { error, value } = updateUserSchema.validate(req.body, {
-    abortEarly: true,
-    stripUnknown: true,
-  });
-
-  if (error && !req.file) {
-    return res.status(400).json({ error: error.details[0].message });
+// 4. පරිශීලක තොරතුරු යාවත්කාලීන කිරීම (බග් එක නිවැරදි කර ඇත 🛠️)
+export const updateUser = catchAsync(async (req, res) => {
+  // මුලින්ම ආපු දත්ත Zod හරහා පිරිසිදු කරගන්නවා
+  const result = updateUserSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(400).json({ error: result.error.issues[0].message });
   }
 
-  const data = { ...(error ? {} : value) };
+  // පිරිසිදු කරගත් දත්ත ටික ගන්නවා
+  const data = { ...result.data };
 
+  // පින්තූරයක් එවලා තියෙනවා නම් විතරක් ඒක එකතු කරනවා
   if (req.file) {
     data.image = req.file.filename;
   }
 
+  // කිසිම දෙයක් එවලා නැත්නම් වැරැද්දක් දෙනවා
   if (!Object.keys(data).length) {
     return res.status(400).json({ error: "At least one field is required" });
   }
 
-  try {
-    const updatedUser = await userService.updateUser(req.user.userId, data);
+  const updatedUser = await userService.updateUser(req.user.userId, data);
+  return res.status(200).json({
+    message: "Profile updated successfully",
+    user: updatedUser,
+  });
+});
 
-    return res.status(200).json({
-      message: "Profile updated successfully",
-      user: updatedUser,
-    });
-  } catch (serviceError) {
-    console.error("Update user error:", serviceError);
+// 5. පරිශීලකයෙක් මකා දැමීම
+export const deleteUser = catchAsync(async (req, res) => {
+  await userService.deleteUser(req.params.id);
+  return res.status(200).json({ message: "User deleted successfully" });
+});
 
-    if (serviceError.message === "Invalid user id") {
-      return res.status(400).json({ error: "Valid user ID is required" });
-    }
+// 6. තමන්ගේම තොරතුරු ලබා ගැනීම (Profile)
+export const getMe = catchAsync(async (req, res) => {
+  const user = await userService.getUserById(req.user.userId);
+  if (!user) return res.status(404).json({ error: "User not found" });
 
-    if (serviceError.message === "User not found") {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    if (serviceError?.code === "P2002") {
-      return res.status(409).json({ error: "Email already exists" });
-    }
-
-    return res.status(500).json({ error: "Internal Server Error" });
-  }
-}
-
-export async function deleteUser(req, res) {
-  try {
-    await userService.deleteUser(req.params.id);
-    return res.status(200).json({ message: "User deleted successfully" });
-  } catch (error) {
-    if (error.message === "Invalid user id") {
-      return res.status(400).json({ error: "Valid user ID is required" });
-    }
-
-    if (error.message === "User not found") {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    return res.status(500).json({ error: "Internal Server Error" });
-  }
-}
-
-export async function getMe(req, res) {
-  try {
-    const user = await userService.getUserById(req.user.userId);
-
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    return res.status(200).json({ user });
-  } catch (error) {
-    console.error("Error fetching user data:", error);
-
-    if (error.message === "Invalid user id") {
-      return res.status(400).json({ error: "Valid user ID is required" });
-    }
-
-    return res.status(500).json({ error: "Internal Server Error" });
-  }
-}
+  return res.status(200).json({ user });
+});
