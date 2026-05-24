@@ -16,10 +16,7 @@ export const userService = {
 
   getUserById: (id) => userRepository.findById(parseUserId(id)),
 
-  async createUser(userData) {
-    const hashedPassword = await bcrypt.hash(userData.password, 10);
-    return userRepository.create({ ...userData, password: hashedPassword });
-  },
+
 
   async updateUser(id, data) {
     const userId = parseUserId(id);

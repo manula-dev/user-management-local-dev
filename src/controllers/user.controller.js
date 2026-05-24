@@ -1,5 +1,5 @@
 import { userService } from "../services/user.service.js";
-import { createUserSchema, updateUserSchema } from "../schemas/auth.schemas.js";
+import { updateUserSchema } from "../schemas/auth.schemas.js";
 import { catchAsync } from "../utils/catchAsync.js"; // අපේ ස්ටන්ට් රයිඩර් 🚀
 
 // 1. සියලුම පරිශීලකයන් ලබා ගැනීම
