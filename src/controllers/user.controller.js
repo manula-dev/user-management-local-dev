@@ -1,5 +1,5 @@
 import { userService } from "../services/user.service.js";
-import { createUserSchema, updateUserSchema } from "../validators/user.validator.js";
+import { createUserSchema, updateUserSchema } from "../schemas/auth.schemas.js";
 import { catchAsync } from "../utils/catchAsync.js"; // අපේ ස්ටන්ට් රයිඩර් 🚀
 
 // 1. සියලුම පරිශීලකයන් ලබා ගැනීම
@@ -16,16 +16,6 @@ export const getUserById = catchAsync(async (req, res) => {
   return res.status(200).json(user);
 });
 
-// 3. අලුත් පරිශීලකයෙක් සෑදීම (Zod වලට හැරෙව්වා)
-export const createUser = catchAsync(async (req, res) => {
-  const result = createUserSchema.safeParse(req.body);
-  if (!result.success) {
-    return res.status(400).json({ error: result.error.issues[0].message });
-  }
-
-  const newUser = await userService.createUser(result.data);
-  return res.status(201).json(newUser);
-});
 
 // 4. පරිශීලක තොරතුරු යාවත්කාලීන කිරීම (බග් එක නිවැරදි කර ඇත 🛠️)
 export const updateUser = catchAsync(async (req, res) => {
