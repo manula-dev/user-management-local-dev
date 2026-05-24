@@ -1,3 +1,4 @@
+
 import express from "express";
 import path from "path";
 import cors from "cors";
@@ -49,13 +50,26 @@ app.use((req, res) => {
 });
 
 app.use((err, req, res, next) => {
-  console.error(err);
+  console.error("Global Error Log:" ,err);
 
   if (res.headersSent) {
     return next(err);
   }
 
+  if(err?.code === "P2002") {
+    return res.status(409).json({ error: "Email already exists" });
+  }
+
+  if (err?.message === "Invalid user id") {
+    return res.status(400).json({ error: "Valid user ID is required" });  
+  } 
+
+  if (err?.message === "User not found") {
+    return res.status(404).json({ error: "User not found" });   
+  } 
+
   return res.status(500).json({ error: "Internal Server Error" });
 });
 
 export default app;
+
